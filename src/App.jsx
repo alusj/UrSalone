@@ -3,9 +3,16 @@ import { useEffect, useMemo, useState } from "react";
 import supabase from "./supabaseClient";
 
 // Your other pages
+import BottomTabs from "./components/BottomTabs.jsx";
 import Hotels from "./Hotels.jsx";
 import Essentials from "./Essentials.jsx";
 import Login from "./Login.jsx";
+import Explore from "./Explore.jsx";
+import Marketplace from "./Marketplace.jsx";
+import Navigation from "./Navigation.jsx";
+import Transportation from "./Transportation.jsx";
+import UrBank from "./UrBank.jsx";
+
 
 /** Simple placeholder for Orders page (you can replace later) */
 function Orders() {
@@ -50,7 +57,16 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session ?? null);
     });
-
+    // inside App(), before the return (...)
+const signOut = async () => {
+  try {
+    await supabase.auth.signOut();   // sign out with Supabase
+    setPage("explore");              // optional: go back to Explore
+    setSession(null);                // clear session state
+  } catch (e) {
+    console.error("Logout failed:", e.message);
+  }
+};
     // cleanup subscription
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -130,155 +146,36 @@ export default function App() {
   if (!session) {
     return <Login />;
   }
+        return (
+  <div className="min-h-screen bg-slate-100 pb-20">
+    {/* --- Optional Header (branding + logout) --- */}
+    <header className="bg-white shadow p-4 flex justify-between items-center">
+      <h1 className="text-xl font-bold text-blue-600">UrSalone</h1>
+     <button
+  onClick={async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setPage("explore");
+  }}
+  className="px-3 py-1 bg-red-500 text-white rounded"
+>
+  Logout
+</button>
 
-  // --- UI ---
-  return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold text-blue-700">
-            UrSalone{" "}
-            <span role="img" aria-label="globe">
-              🌍
-            </span>{" "}
-            {page.charAt(0).toUpperCase() + page.slice(1)}
-          </h1>
+    </header>
 
-          <div className="flex gap-2">
-            {/* Page nav */}
-            <nav className="hidden sm:flex gap-2">
-              <button
-                onClick={() => setPage("districts")}
-                className={`px-3 py-1 rounded border ${
-                  page === "districts"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white hover:bg-slate-50"
-                }`}
-              >
-                Districts
-              </button>
-              <button
-                onClick={() => setPage("hotels")}
-                className={`px-3 py-1 rounded border ${
-                  page === "hotels"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white hover:bg-slate-50"
-                }`}
-              >
-                Hotels
-              </button>
-              <button
-                onClick={() => setPage("essentials")}
-                className={`px-3 py-1 rounded border ${
-                  page === "essentials"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white hover:bg-slate-50"
-                }`}
-              >
-                Essentials
-              </button>
-              <button
-                onClick={() => setPage("orders")}
-                className={`px-3 py-1 rounded border ${
-                  page === "orders"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white hover:bg-slate-50"
-                }`}
-              >
-                Orders
-              </button>
-            </nav>
+    {/* --- Page content --- */}
+    <main className="p-4">
+      {page === "explore" && <Explore />}
+      {page === "marketplace" && <Marketplace />}
+      {page === "urbank" && <UrBank />}
+      {page === "navigation" && <Navigation />}
+      {page === "transportation" && <Transportation />}
+    </main>
 
-            {/* Logout */}
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                setPage("districts");
-              }}
-              className="px-3 py-1 rounded border bg-white hover:bg-slate-50"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* PAGE: Districts */}
-      {page === "districts" && (
-        <main className="mx-auto max-w-5xl px-6 py-6">
-          <p className="text-sm text-gray-500 mb-4">{status}</p>
-
-          {/* Toolbar */}
-          <div className="mb-6 grid gap-3 sm:grid-cols-3">
-            {/* Search */}
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search district or capital…"
-              className="w-full rounded-md border px-3 py-2"
-            />
-
-            {/* Province */}
-            <select
-              value={province}
-              onChange={(e) => setProvince(e.target.value)}
-              className="w-full rounded-md border px-3 py-2"
-            >
-              <option>All</option>
-              <option>Eastern</option>
-              <option>Northern</option>
-              <option>North West</option>
-              <option>Southern</option>
-              <option>Western Area</option>
-            </select>
-
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full rounded-md border px-3 py-2"
-            >
-              <option value="name-asc">Sort: Name (A–Z)</option>
-              <option value="name-desc">Sort: Name (Z–A)</option>
-              <option value="pop-asc">Sort: Population (low→high)</option>
-              <option value="pop-desc">Sort: Population (high→low)</option>
-            </select>
-          </div>
-
-          {error && <p className="text-red-600 mb-4">Error: {error}</p>}
-          {!error && filtered.length === 0 && (
-            <p className="text-gray-500">No districts found.</p>
-          )}
-
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((r) => (
-              <li
-                key={r.id}
-                className="bg-white shadow-md rounded-lg p-6 border hover:shadow-xl transition"
-              >
-                <strong className="text-lg text-gray-800">{r.name}</strong>
-                <br />
-                Capital: <span className="font-medium">{r.capital}</span>
-                <br />
-                Province: {r.province}
-                <br />
-                Population: {r.population?.toLocaleString()}
-              </li>
-            ))}
-          </ul>
-        </main>
-      )}
-
-      {/* PAGE: Hotels */}
-      {page === "hotels" && <Hotels />}
-
-      {/* PAGE: Essentials */}
-      {page === "essentials" && <Essentials />}
-
-      {/* PAGE: Orders */}
-      {page === "orders" && <Orders />}
-    </div>
-  );
-}
+    {/* --- Bottom Taskbar --- */}
+    <BottomTabs page={page} setPage={setPage} />
+  </div>
+);
+// <-- after this, there should be NOTHING except the closing brace of the function:
+}  // end of export default function App()
