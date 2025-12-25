@@ -12,11 +12,34 @@ const TABS = [
   { id: "messages",    label: "UrMessages",      emoji: "💬", badge: 1 }, // demo badge
 ];
 
+
 export default function Explore() {
  const [tab, setTab] = useState("feed");
+ const [feedTab, setFeedTab] = useState("feed");
+
  
   // demo badge counts; replace with real counts later
   const badgeCounts = useMemo(() => ({ notifs: 3, messages: 1 }), []);
+  const [hideTopTabs, setHideTopTabs] = useState(false);
+const lastScrollY = useRef(0);
+
+useEffect(() => {
+  const onScroll = () => {
+    const y = window.scrollY || 0;
+
+    if (y > lastScrollY.current + 8) {
+      setHideTopTabs(true);   // scrolling down
+    } else if (y < lastScrollY.current - 8) {
+      setHideTopTabs(false);  // scrolling up
+    }
+
+    lastScrollY.current = y;
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  return () => window.removeEventListener("scroll", onScroll);
+}, []);
+
 
   const Pill = ({ id, label, emoji }) => {
     const active = tab === id;
@@ -64,10 +87,54 @@ export default function Explore() {
         </div>
       </div>
 
+        
+       {/* UrFeed sub-tabs (TikTok style) */}
+ <div
+ className={`sticky top-[56px] z-20 bg-slate-100/80 backdrop-blur
+              transition-transform duration-300
+              ${hideTopTabs ? "-translate-y-full" : "translate-y-0"}`}
+>
+  </div>
+  {tab === "feed" && (
+  <div className="px-4 pt-2">
+    <div className="flex gap-6 text-sm font-medium text-gray-500">
+      
+      <button
+        onClick={() => setFeedTab("feed")}
+        className={`pb-2 transition
+          ${
+            feedTab === "feed"
+              ? "text-black border-b-2 border-black"
+              : "hover:text-gray-700"
+          }`}
+      >
+        Feed
+      </button>
+
+      <button
+        onClick={() => setFeedTab("friends")}
+        className={`pb-2 transition
+          ${
+            feedTab === "friends"
+              ? "text-black border-b-2 border-black"
+              : "hover:text-gray-700"
+          }`}
+      >
+        Connections
+      </button>
+
+    </div>
+  </div>
+)}
+
+
+
+
+
       {/* Content area; extra bottom padding so it sits above the bottom taskbar */}
-      <div className="px-4 pt-4 pb-28">
-        {tab === "feed" && <FeedSection />}
-        {tab === "connections" && <ConnectionsSection />}
+           <div className="px-4 pt-4 pb-28">
+        {tab === "feed" && feedTab === "feed" && <FeedSection />}
+        {tab === "feed" && feedTab === "connections" && <ConnectionsSection />}
         {tab === "discover" && <DiscoverSection />}
         {tab === "notifs" && <NotificationsSection />}
         {tab === "messages" && <MessagesSection />}
